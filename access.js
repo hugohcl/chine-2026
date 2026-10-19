@@ -22,7 +22,7 @@ async function secureFetch(input,options={}){
   if(response.status===401||response.status===403){hideTrip();reset();status('L’accès a expiré ou a été révoqué. Reconnecte-toi.');}
   return response;
 }
-window.VoyageAccess=Object.freeze({request:secureFetch,storage,isOffline:()=>offline,getVaultKey:()=>vaultKey,openSettings:()=>{$('toolbar').showModal();},lock:()=>{$('lock').click();}});
+window.VoyageAccess=Object.freeze({request:secureFetch,storage,isOffline:()=>offline,getVaultKey:()=>vaultKey,openExternal:url=>{const target=new URL(url);if(target.protocol!=='https:'||target.username||target.password)throw new Error('Lien externe non autorisé');window.open(target.href,'_blank','noopener,noreferrer');},openSettings:()=>{$('toolbar').showModal();},lock:()=>{$('lock').click();}});
 function display(){ $('gate').hidden=true;$('trip').hidden=false;$('prepare').hidden=offline;$('invite').hidden=true;if(!offline)api.rpc('voyage_can_invite').then(({data})=>{$('invite').hidden=data!==true;});$('mode').textContent=offline?'Copie hors ligne · modifications non enregistrées':'Accès privé · Authenticator';$('trip').srcdoc=html;document.body.dataset.openMs=String(Math.round(performance.now()-bootStarted)); }
 async function authorized(){const {data,error}=await api.rpc('voyage_claim');if(error||data!==true)throw new Error('Ce compte n’est pas autorisé, ou sa connexion a expiré.');}
 async function openOnline(){
