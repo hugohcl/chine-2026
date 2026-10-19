@@ -13,7 +13,7 @@ async function headers(){const {data,error}=await api.auth.getSession();if(error
 async function secureFetch(input,options={}){
   const u=new URL(typeof input==='string'?input:input.url,location.href);
   if(![CONFIG.url,CONFIG.oldOrigin].includes(u.origin)) throw new Error('Destination réseau non autorisée.');
-  if(!/^\/rest\/v1\/(chine_plan|chine_finances|chine_todo|chine_coffre|chine_coffre_config)(\?|$)/.test(u.pathname+u.search))throw new Error('Ce service est indisponible dans cet accès.');
+  if(!/^\/rest\/v1\/(chine_plan|chine_finances|chine_todo|chine_hotel_wishlist|chine_coffre|chine_coffre_config)(\?|$)/.test(u.pathname+u.search))throw new Error('Ce service est indisponible dans cet accès.');
   const path=u.pathname+u.search, method=(options.method||'GET').toUpperCase();
   if(offline){if(method==='GET'&&Object.hasOwn(responses,path))return new Response(responses[path],{headers:{'Content-Type':'application/json'}});throw new Error('Copie hors ligne : synchronisation indisponible.');}
   const h=new Headers(options.headers);h.delete('x-chine-cle');for(const [k,v] of Object.entries(await headers()))h.set(k,v);
