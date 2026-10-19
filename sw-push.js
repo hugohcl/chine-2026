@@ -1,4 +1,4 @@
-const CACHE='voyage-access-5c3dae1ec1ea';
+const CACHE='voyage-access-bf80d94f4c2e';
 const FILES=['./','./index.html','./access.css','./access.js','./crypto.js','./config.js','./vendor/supabase-2.105.0.js','./vendor/leaflet.js','./vendor/leaflet.css'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
