@@ -7,6 +7,8 @@ PUBLIC_FILES = [
     'index.html', 'access.js', 'access.css', 'config.js', 'crypto.js',
     'offline-sw.js', 'sw.js', 'sw-push.js', 'po.png', 'oogway.png',
     'vendor/supabase-2.105.0.js', 'vendor/leaflet.js', 'vendor/leaflet.css',
+    'vendor/pdfjs/pdf.min.mjs', 'vendor/pdfjs/pdf.worker.min.mjs',
+    'vendor/pdfjs/LICENSE', 'vendor/pdfjs/version.json',
 ]
 
 def prepare(root, output):
@@ -21,7 +23,7 @@ def prepare(root, output):
     for name in PUBLIC_FILES:
         path = root / name
         assert path.is_file() and not path.is_symlink(), 'Missing regular public asset: ' + name
-        if path.suffix in ['.html', '.js', '.css']:
+        if path.suffix in ['.html', '.js', '.mjs', '.css']:
             content = path.read_text(encoding='utf-8')
             assert not any(marker in content for marker in [
                 'CHINE_CLE', 'HOT_WISH_GALLERIES', 'SUPABASE_SERVICE_ROLE_KEY',

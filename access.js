@@ -73,6 +73,8 @@ $('save-form').addEventListener('submit',async e=>{e.preventDefault();e.submitte
  const verifier=window.supabase.createClient(CONFIG.url,CONFIG.key,{auth:{storageKey:'voyage-password-check',persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
  try{const {data:checked,error}=await verifier.auth.signInWithPassword({email:identity.user.email,password:phrase});if(error||checked.user?.id!==identity.user.id)throw new Error('Mot de passe de connexion incorrect.');}finally{await verifier.auth.signOut({scope:'local'});}
  await vault.unlock();await vault.sync();
+ await navigator.serviceWorker?.ready;
+ await Promise.all(['vendor/pdfjs/pdf.min.mjs','vendor/pdfjs/pdf.worker.min.mjs'].map(async path=>{const response=await fetch(new URL(path,location.href));if(!response.ok)throw new Error('Le lecteur PDF n’a pas pu être préparé hors ligne. Réessaie avec du réseau.');await response.arrayBuffer();}));
  const record=await seal({html,values,responses,vaultKey,savedAt:new Date().toISOString()},phrase);
  await db('readwrite',s=>s.put(record,'snapshot'));
  await navigator.storage?.persist?.();$('save-status').textContent='Copie chiffrée enregistrée. Teste son ouverture en mode avion avant le départ.';$('offline-open').hidden=false;

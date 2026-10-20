@@ -1,12 +1,13 @@
-const CACHE='voyage-access-67f10e8d9713';
+const CACHE='voyage-access-c5855be398de';
 const FILES=['./','./index.html','./access.css','./access.js','./crypto.js','./config.js','./vendor/supabase-2.105.0.js','./vendor/leaflet.js','./vendor/leaflet.css'];
+const OPTIONAL=['./vendor/pdfjs/pdf.min.mjs','./vendor/pdfjs/pdf.worker.min.mjs'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
  const url=new URL(e.request.url);
  if(e.request.method!=='GET'||url.origin!==self.location.origin)return;
  const path=new URL('.',self.location.href).pathname;
- if(!FILES.some(f=>new URL(f,self.location.href).pathname===url.pathname))return;
+ if(!FILES.concat(OPTIONAL).some(f=>new URL(f,self.location.href).pathname===url.pathname))return;
  e.respondWith(caches.open(CACHE).then(async c=>{
   if(e.request.mode==='navigate'){
    try{const r=await fetch(new Request(e.request,{cache:'reload'}));if(r.ok){await c.put(e.request,r.clone());return r;}}catch(error){}
