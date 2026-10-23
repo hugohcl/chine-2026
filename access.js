@@ -1,8 +1,9 @@
 import {CONFIG} from './config.js';
 import {seal,unseal} from './crypto.js';
+import {createSessionStorage} from './session-storage.js';
 const $=id=>document.getElementById(id);
 const bootStarted=performance.now();
-const api=window.supabase.createClient(CONFIG.url,CONFIG.key,{auth:{storageKey:CONFIG.storageKey,flowType:'pkce',detectSessionInUrl:false,persistSession:true,autoRefreshToken:true}});
+const api=window.supabase.createClient(CONFIG.url,CONFIG.key,{auth:{storage:createSessionStorage(),storageKey:CONFIG.storageKey,flowType:'pkce',detectSessionInUrl:false,persistSession:true,autoRefreshToken:true}});
 let factor=null, html='', vaultKey=null, offline=false, values=Object.create(null), responses=Object.create(null), opening=false;
 const storage={get length(){return Object.keys(values).length;},key:i=>Object.keys(values)[i]??null,getItem:k=>{if(k==='chine-hotel-view'){try{return localStorage.getItem(k);}catch{}}return values[k]??null;},setItem(k,v){values[k]=String(v);if(k==='chine-hotel-view'&&String(v).length<10000){try{localStorage.setItem(k,String(v));}catch{}}},removeItem(k){delete values[k];},clear(){values=Object.create(null);}};
 const status=t=>{$('status').textContent=t;};
