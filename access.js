@@ -3,7 +3,7 @@ import {seal,unseal} from './crypto.js';
 import {createSessionStorage} from './session-storage.js';
 const $=id=>document.getElementById(id);
 const bootStarted=performance.now();
-const api=window.supabase.createClient(CONFIG.url,CONFIG.key,{auth:{storage:createSessionStorage(),storageKey:CONFIG.storageKey,flowType:'pkce',detectSessionInUrl:false,persistSession:true,autoRefreshToken:true}});
+const api=window.supabase.createClient(CONFIG.url,CONFIG.key,{auth:{experimental:{passkey:true},storage:createSessionStorage(),storageKey:CONFIG.storageKey,flowType:'pkce',detectSessionInUrl:false,persistSession:true,autoRefreshToken:true}});
 let factor=null, html='', vaultKey=null, offline=false, values=Object.create(null), responses=Object.create(null), opening=false;
 const storage={get length(){return Object.keys(values).length;},key:i=>Object.keys(values)[i]??null,getItem:k=>{if(k==='chine-hotel-view'){try{return localStorage.getItem(k);}catch{}}return values[k]??null;},setItem(k,v){values[k]=String(v);if(k==='chine-hotel-view'&&String(v).length<10000){try{localStorage.setItem(k,String(v));}catch{}}},removeItem(k){delete values[k];},clear(){values=Object.create(null);}};
 const status=t=>{$('status').textContent=t;};
@@ -56,6 +56,11 @@ async function challenge(force=false){
  status('');$('code').focus();
 }
 async function run(button,action){button.disabled=true;try{await action();}catch(e){status(e.message||'Connexion impossible.');}finally{button.disabled=false;}}
+const passkeysAvailable=!!window.PublicKeyCredential&&typeof api.auth.signInWithPasskey==='function';
+$('passkey-login').hidden=!passkeysAvailable;
+$('passkey-register').hidden=!passkeysAvailable;
+$('passkey-login').onclick=()=>run($('passkey-login'),async()=>{status('Valide la clé d’accès sur ton appareil…');const {error}=await api.auth.signInWithPasskey();if(error)throw new Error('Clé d’accès indisponible ou validation annulée. Tu peux aussi utiliser ton mot de passe.');await challenge();});
+$('passkey-register').onclick=async()=>{const button=$('passkey-register');button.disabled=true;try{await authorized();$('passkey-status').textContent='Valide la création sur ton appareil…';const {error}=await api.auth.registerPasskey();if(error)throw error;$('passkey-status').textContent='Clé d’accès ajoutée. À la prochaine connexion, utilise Face ID / clé d’accès. Authenticator reste demandé si nécessaire.';}catch{$('passkey-status').textContent='Création annulée ou indisponible. Ton accès habituel reste utilisable.';}finally{button.disabled=false;}};
 $('login').addEventListener('submit',e=>{e.preventDefault();run(e.submitter,async()=>{status('Connexion…');const password=$('password').value;$('password').value='';const {error}=await api.auth.signInWithPassword({email:$('email').value.trim(),password});if(error)throw new Error('Connexion refusée. Vérifie tes identifiants et la confirmation de ton e-mail.');await challenge();});});
 $('mfa').addEventListener('submit',e=>{e.preventDefault();run(e.submitter,async()=>{const code=$('code').value;$('code').value='';const {error}=await api.auth.mfa.challengeAndVerify({factorId:factor,code});if(error)throw new Error('Code refusé ou expiré. Utilise le nouveau code Authenticator.');await openOnline();});});
 $('back').onclick=()=>run($('back'),async()=>{await api.auth.signOut({scope:'local'});reset();status('');});
@@ -88,7 +93,7 @@ window.addEventListener('offline',()=>{if(!$('trip').hidden&&!offline)$('mode').
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./offline-sw.js').catch(()=>{});
 try{const invitation=new URLSearchParams(location.hash.slice(1)).get('invitation');if(invitation){history.replaceState(null,'',location.pathname);await api.auth.signOut({scope:'local'});const {error}=await api.auth.verifyOtp({token_hash:invitation,type:'invite'});if(error)throw new Error('Invitation expirée ou déjà utilisée. Demande à Hugo un nouveau lien.');$('login').hidden=true;$('welcome').hidden=false;status('Ton invitation est reconnue. Choisis ton mot de passe.');}else{db('readonly',s=>s.get('snapshot')).then(copy=>{$('offline-open').hidden=!copy;}).catch(()=>{});const {data}=await api.auth.getSession();if(data.session)await challenge();else status('Connecte-toi pour préparer votre voyage.');}}catch(e){status(navigator.onLine?e.message:'Pas de réseau. Ouvre une copie hors ligne préparée sur cet appareil.');}finally{$('boot').hidden=true;if($('trip').hidden)$('gate').hidden=false;}
 
-$('toolbar').addEventListener('click',e=>{if(e.target.closest('button'))$('toolbar').close();});
+$('toolbar').addEventListener('click',e=>{if(['lock','logout'].includes(e.target.closest('button')?.id))$('toolbar').close();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')$('toolbar').close();});
 
 $('close-options').onclick=()=>{$('toolbar').close();};

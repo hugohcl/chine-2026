@@ -5,7 +5,7 @@ import sys
 
 PUBLIC_FILES = [
     'index.html', 'access.js', 'access.css', 'config.js', 'crypto.js',
-    'session-storage.js', 'manifest.webmanifest', 'offline-sw.js', 'sw.js', 'sw-push.js', 'po.png', 'oogway.png',
+    'mobile-app.css','mobile-app.js','session-storage.js', 'manifest.webmanifest', 'offline-sw.js', 'sw.js', 'sw-push.js', 'po.png', 'oogway.png',
     'vendor/supabase-2.105.0.js', 'vendor/leaflet.js', 'vendor/leaflet.css',
     'vendor/pdfjs/pdf.min.mjs', 'vendor/pdfjs/pdf.worker.min.mjs',
     'vendor/pdfjs/LICENSE', 'vendor/pdfjs/version.json',

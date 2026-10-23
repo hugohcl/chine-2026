@@ -3,3 +3,14 @@
 iframe#trip{height:100dvh;width:100%;position:fixed;inset:0}
 dialog#toolbar{position:fixed;inset:0;margin:auto;width:min(340px,90vw);height:fit-content;min-height:0;max-height:90dvh;padding:22px;background:#f4f1e9;border:1px solid #c5d0c7;border-radius:15px;box-shadow:0 20px 70px #0004;z-index:10;overflow:auto}dialog#toolbar:not([open]){display:none}dialog#toolbar[open]{display:block}dialog#toolbar::backdrop{background:#0d242266;backdrop-filter:blur(3px)}.options-head{display:flex;align-items:center;justify-content:space-between;gap:15px}.options-head h2{font-size:18px;margin:0}.options-head button{margin:0;font-size:21px;padding:2px 10px;background:transparent;color:#173c35}.account-actions{display:flex;flex-direction:column;gap:8px;margin-top:15px}.account-actions strong{font-size:11px;color:#52635b;margin-bottom:6px}.account-actions button{text-align:left;margin:0;font-size:13px;padding:12px}#invite-panel,#offline-save{z-index:20}
 #boot{height:100dvh;display:flex;align-items:center;justify-content:center;gap:12px;font-size:14px;color:#52635b}.boot-spinner{width:18px;height:18px;border:2px solid #d4ddd5;border-top-color:#173c35;border-radius:50%;animation:boot-turn .8s linear infinite}@keyframes boot-turn{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.boot-spinner{animation:none}}
+
+html{-webkit-text-size-adjust:100%}button,a,input{touch-action:manipulation}button{min-height:44px}button:active{opacity:.75}#passkey-status:empty{display:none}
+@media(max-width:760px){
+ main{margin:0 auto;padding:calc(36px + env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px));min-height:100dvh}
+ #login>button,#mfa>button,#passkey-login{width:100%;margin:12px 0 0;min-height:50px;border-radius:13px;font-weight:650}input{min-height:50px;border-radius:12px;font-size:17px}
+ dialog#toolbar{inset:auto 0 0;margin:0;width:100%;max-width:100%;max-height:calc(100dvh - env(safe-area-inset-top,0px) - 30px);padding:20px max(22px,env(safe-area-inset-right,0px)) calc(22px + env(safe-area-inset-bottom,0px)) max(22px,env(safe-area-inset-left,0px));border-radius:24px 24px 0 0;border-bottom:0}
+ .options-head button{width:44px;height:44px}.account-actions button{min-height:50px;font-size:15px;border-radius:12px}#passkey-status{font-size:14px;margin:0;line-height:1.5}
+ #invite-panel,#offline-save{padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}#invite-panel>div,#offline-save form{padding:22px;max-width:100%}
+}
+
+#login[hidden]~#passkey-login{display:none!important}

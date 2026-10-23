@@ -1,0 +1,43 @@
+/* iPhone layout, shared by the authenticated app and local previews. */
+.ios-tab-icon{display:none}
+html{-webkit-text-size-adjust:100%}
+button,a,input,select,textarea{touch-action:manipulation}
+@media(max-width:760px){
+ :root{--hmini:60px;--mobile-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
+ html{scroll-padding-top:calc(70px + env(safe-area-inset-top,0px));scroll-padding-bottom:var(--mobile-bottom)}
+ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:var(--mobile-bottom);overflow-wrap:break-word}
+ .pg{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0}
+ .panel{min-width:0;padding-top:20px;padding-bottom:24px}.panel.active{animation:none}
+ .appbar{height:calc(60px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));gap:10px}
+ .appbar .app-home{width:auto;flex:1;min-width:0}.app-home span{font-size:15px!important;line-height:1.2!important}.app-home small{display:block;font-size:9px}
+ .app-oogway{width:34px;height:48px}.app-po{display:none}
+ .app-options{width:44px;height:44px;min-width:44px;margin-left:auto;font-size:24px}
+ .appbar .tabs{position:fixed;top:auto;bottom:0;left:0;right:0;width:100%;height:var(--mobile-bottom);display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;padding:6px max(4px,env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) max(4px,env(safe-area-inset-left,0px));border-top:1px solid var(--line);background:var(--card);border-radius:0;overflow:visible;box-shadow:0 -4px 24px #00000008}
+ .appbar .tabs button[data-t]{min-width:0;min-height:54px;padding:4px 1px;margin:0;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--tx2);font-size:10px;font-weight:600;line-height:1.2;letter-spacing:0;position:relative;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+ .appbar .tabs button[data-t][aria-current=true]{background:color-mix(in srgb,var(--zhu) 12%,var(--card));color:var(--zhu)}
+ .ios-tab-icon{display:block;width:23px;height:23px;flex:none}.ios-tab-icon svg{display:block;width:100%;height:100%;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
+ .appbar .tabs .cnt{display:none}
+ .appbar .tabs .themebtn{position:fixed;top:calc(8px + env(safe-area-inset-top,0px));right:60px;width:44px;height:44px;margin:0;padding:0;color:#e6eee9;font-size:20px;background:transparent}
+ .appbar .app-home{padding-right:44px}
+ button,.btn,summary{min-height:44px}input,select,textarea{font-size:16px!important;max-width:100%}
+ button:active,.btn:active{opacity:.7}
+ .bh{margin-bottom:20px}.bh h2{font-size:28px}.bh p{font-size:14px;line-height:1.55}
+ #p-todo.panel.active{gap:20px}.todo-calendar{padding:14px}.todo-day{height:44px}.todolist{columns:auto}
+ .todotop{gap:8px}.todo-filters{flex-wrap:wrap}.todo-filters button{flex:1;min-width:70px}
+ .mseg.mseg-g{min-width:0;width:100%;max-width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.mseg.mseg-g button{min-width:0;padding:8px 4px;font-size:12px;white-space:normal}
+ .hot-tools,.vault-filters{flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none;padding-bottom:6px}.hot-tools button,.vault-filters button{flex:none}
+ .hot-tools::-webkit-scrollbar,.vault-filters::-webkit-scrollbar{display:none}
+ .hot-stats{flex-wrap:wrap}.hot-stats span{min-width:0;flex:1 1 90px}
+ .hot-layout{grid-template-columns:minmax(0,1fr);gap:16px}.hot-info{padding-top:0}.hot-cardhead{min-width:0}.hot-card h3{overflow-wrap:anywhere}
+ .hot-actions a,.hot-actions button{display:inline-flex;align-items:center;justify-content:center;min-height:44px}
+ .hot-compare,.hot-tablewrap{max-width:100%;overflow-x:auto}
+ .urg-modes{gap:3px;padding:4px}.urg-modes button{font-size:12px;padding:10px 6px;line-height:1.35;min-width:0}
+ .urg-hotlines,.urg-profiles,.urg-scenarios{grid-template-columns:minmax(0,1fr)}
+ .finsum{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fincard{padding:14px 12px;min-width:0}.finlayout{grid-template-columns:minmax(0,1fr)}
+ .sheet{padding:max(10px,env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) max(10px,env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px))}
+ .sheetbox{max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 20px);overflow:auto;overscroll-behavior:contain}
+ .docmodal{padding:calc(10px + env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px))}
+ .docmodalhead button,.doc-pdf-tools button{min-width:44px;min-height:44px}.doc-pdf-tools{flex-wrap:wrap}.docviewer{overflow:auto;overscroll-behavior:contain}
+ .docactions{gap:8px}.docactions button{min-width:44px}.hot-lightbox{max-height:calc(100dvh - 24px);overflow:auto}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.panel.active{animation:none}}
