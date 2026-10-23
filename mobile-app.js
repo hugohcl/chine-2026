@@ -11,3 +11,15 @@ for(const button of document.querySelectorAll('.tabs button[data-t]')){
  const icon=document.createElement('span');icon.className='ios-tab-icon';icon.setAttribute('aria-hidden','true');
  icon.innerHTML='<svg viewBox="0 0 24 24">'+paths[button.dataset.t]+'</svg>';button.prepend(icon);
 }
+const financeRows=document.getElementById('finrows');
+const financeLabels=['Dépense','Catégorie','Statut','Payé par','Pour','Date / échéance','Montant','Devise','Note',''];
+function labelFinance(){
+ for(const row of financeRows?.rows||[]){
+  [...row.cells].forEach((cell,index)=>{
+   cell.dataset.mobileLabel=financeLabels[index];
+   const field=cell.querySelector('input,select,textarea');
+   if(field&&!field.hasAttribute('aria-label'))field.setAttribute('aria-label',financeLabels[index]);
+  });
+ }
+}
+if(financeRows){labelFinance();new MutationObserver(labelFinance).observe(financeRows,{childList:true,subtree:true});}
