@@ -4,12 +4,12 @@ import {createSessionStorage} from './session-storage.js';
 const $=id=>document.getElementById(id);
 const bootStarted=performance.now();
 const api=window.supabase.createClient(CONFIG.url,CONFIG.key,{auth:{experimental:{passkey:true},storage:createSessionStorage(),storageKey:CONFIG.storageKey,flowType:'pkce',detectSessionInUrl:false,persistSession:true,autoRefreshToken:true}});
-let factor=null, html='', vaultKey=null, offline=false, values=Object.create(null), responses=Object.create(null), opening=false, recovering=false;
+let factor=null, html='', vaultKey=null, offline=false, values=Object.create(null), responses=Object.create(null), opening=false, recovering=false, booting=true, resuming=false, resumeAllowed=true;
 const storage={get length(){return Object.keys(values).length;},key:i=>Object.keys(values)[i]??null,getItem:k=>{if(k==='chine-hotel-view'||k==='chine-grille'){try{return localStorage.getItem(k);}catch{}}return values[k]??null;},setItem(k,v){values[k]=String(v);if((k==='chine-hotel-view'||k==='chine-grille')&&String(v).length<10000){try{localStorage.setItem(k,String(v));}catch{}}},removeItem(k){delete values[k];},clear(){values=Object.create(null);}};
 const status=t=>{$('status').textContent=t;};
 async function db(mode,fn){const database=await new Promise((resolve,reject)=>{const r=indexedDB.open('voyage-offline-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('copies');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});return new Promise((resolve,reject)=>{const tx=database.transaction('copies',mode),r=fn(tx.objectStore('copies'));let value;r.onsuccess=()=>{value=r.result;};tx.oncomplete=()=>{database.close();resolve(value);};tx.onerror=()=>{database.close();reject(tx.error);};});}
 function hideTrip(){ $('trip').srcdoc='';$('trip').hidden=true;$('toolbar').close();$('gate').hidden=false;$('offline-save').hidden=true;$('invite-panel').hidden=true;$('invite-link').value='';html='';vaultKey=null;values=Object.create(null);responses=Object.create(null); }
-function reset(){factor=null;recovering=false;$('qr').removeAttribute('src');$('qr').hidden=true;$('code').value='';$('mfa').hidden=true;$('login').hidden=false;$('back').hidden=true;}
+function reset(){ $('resume-session').hidden=true;factor=null;recovering=false;$('qr').removeAttribute('src');$('qr').hidden=true;$('code').value='';$('mfa').hidden=true;$('login').hidden=false;$('back').hidden=true;}
 async function headers(){const {data,error}=await api.auth.getSession();if(error||!data.session)throw new Error('Reconnecte-toi pour synchroniser.');return {apikey:CONFIG.key,Authorization:'Bearer '+data.session.access_token};}
 async function secureFetch(input,options={}){
   const u=new URL(typeof input==='string'?input:input.url,location.href);
@@ -24,7 +24,7 @@ async function secureFetch(input,options={}){
   return response;
 }
 window.VoyageAccess=Object.freeze({request:secureFetch,storage,isOffline:()=>offline,getVaultKey:()=>vaultKey,openExternal:url=>{const target=new URL(url);if(target.protocol!=='https:'||target.username||target.password)throw new Error('Lien externe non autorisé');window.open(target.href,'_blank','noopener,noreferrer');},openSettings:()=>{$('toolbar').showModal();},lock:()=>{$('lock').click();}});
-function display(){ $('gate').hidden=true;$('trip').hidden=false;$('prepare').hidden=offline;$('invite').hidden=true;$('reset-jade').hidden=true;if(!offline)api.rpc('voyage_can_invite').then(({data})=>{$('invite').hidden=data!==true;$('reset-jade').hidden=data!==true;});$('mode').textContent=offline?'Copie hors ligne · modifications non enregistrées':'Accès privé · Authenticator';$('trip').srcdoc=html;document.body.dataset.openMs=String(Math.round(performance.now()-bootStarted)); }
+function display(){ resumeAllowed=true;$('resume-session').hidden=true; $('gate').hidden=true;$('trip').hidden=false;$('prepare').hidden=offline;$('invite').hidden=true;$('reset-jade').hidden=true;if(!offline)api.rpc('voyage_can_invite').then(({data})=>{$('invite').hidden=data!==true;$('reset-jade').hidden=data!==true;});$('mode').textContent=offline?'Copie hors ligne · modifications non enregistrées':'Accès privé · Authenticator';$('trip').srcdoc=html;document.body.dataset.openMs=String(Math.round(performance.now()-bootStarted)); }
 async function authorized(){const {data,error}=await api.rpc('voyage_claim');if(error||data!==true)throw new Error('Ce compte n’est pas autorisé, ou sa connexion a expiré.');}
 async function openOnline(){
  if(opening)return;opening=true;
@@ -38,6 +38,7 @@ async function openOnline(){
  }finally{opening=false;}
 }
 async function challenge(force=false){
+ if(force)resumeAllowed=false;
  const {data:level,error}=await api.auth.mfa.getAuthenticatorAssuranceLevel();if(error)throw error;
  if(level.currentLevel==='aal2'&&!force){await openOnline();return;}
  const {data:account,error:accountError}=await api.rpc('voyage_account_status');
@@ -66,9 +67,9 @@ $('passkey-login').onclick=()=>run($('passkey-login'),async()=>{status('Valide l
 $('passkey-register').onclick=async()=>{const button=$('passkey-register');button.disabled=true;try{await authorized();$('passkey-status').textContent='Valide la création sur ton appareil…';const {error}=await api.auth.registerPasskey();if(error)throw error;$('passkey-status').textContent='Clé d’accès ajoutée. À la prochaine connexion, utilise Face ID / clé d’accès. Authenticator reste demandé si nécessaire.';}catch{$('passkey-status').textContent='Création annulée ou indisponible. Ton accès habituel reste utilisable.';}finally{button.disabled=false;}};
 $('login').addEventListener('submit',e=>{e.preventDefault();run(e.submitter,async()=>{status('Connexion…');const password=$('password').value;$('password').value='';const {error}=await api.auth.signInWithPassword({email:$('email').value.trim(),password});if(error)throw new Error('Connexion refusée. Vérifie tes identifiants et la confirmation de ton e-mail.');await challenge();});});
 $('mfa').addEventListener('submit',e=>{e.preventDefault();run(e.submitter,async()=>{const code=$('code').value;$('code').value='';const {error}=await api.auth.mfa.challengeAndVerify({factorId:factor,code});if(error)throw new Error('Code refusé ou expiré. Utilise le nouveau code Authenticator.');if(recovering){$('mfa').hidden=true;$('back').hidden=true;$('welcome-title').textContent='Nouveau mot de passe';$('welcome-help').textContent='Choisis ton nouveau mot de passe. Ton Authenticator ne change pas.';$('welcome-submit').textContent='Enregistrer et ouvrir';$('welcome').hidden=false;status('');$('new-password').focus();return;}await openOnline();});});
-$('back').onclick=()=>run($('back'),async()=>{$('welcome').hidden=true;await api.auth.signOut({scope:'local'});reset();status('');});
+$('back').onclick=()=>run($('back'),async()=>{resumeAllowed=false;$('welcome').hidden=true;await api.auth.signOut({scope:'local'});reset();status('');});
 $('lock').onclick=()=>{hideTrip();if(offline){reset();$('offline-form').hidden=false;status('Copie verrouillée.');}else run($('lock'),()=>challenge(true));};
-$('logout').onclick=()=>run($('logout'),async()=>{hideTrip();await api.auth.signOut({scope:'local'});reset();status('Déconnecté. La copie hors ligne, si préparée, reste chiffrée sur cet appareil.');});
+$('logout').onclick=()=>run($('logout'),async()=>{resumeAllowed=false;hideTrip();await api.auth.signOut({scope:'local'});reset();status('Déconnecté. La copie hors ligne, si préparée, reste chiffrée sur cet appareil.');});
 $('prepare').onclick=()=>{$('offline-save').hidden=false;$('save-status').textContent='';};
 const privateLinks={invite:{fn:'invite-jade',title:'Invitation personnelle',help:'Transmets ce lien uniquement à Jade, en privé. Il remplace la vérification par e-mail et permet d’activer son compte. Usage unique ; validité limitée.'},'reset-jade':{fn:'reset-jade',title:'Nouveau mot de passe pour Jade',help:'Transmets ce lien uniquement à Jade, en privé. Il lui demande son code Authenticator, puis un nouveau mot de passe. Usage unique ; validité limitée.'}};
 for(const [id,link] of Object.entries(privateLinks))$(id).onclick=()=>run($(id),async()=>{ $('invite-title').textContent=link.title;$('invite-help').textContent=link.help;$('invite-panel').hidden=false;$('invite-link').value='';$('copy-invite').hidden=true;$('invite-status').textContent='Préparation du lien…';try{const r=await fetch(CONFIG.url+'/functions/v1/'+link.fn,{method:'POST',headers:await headers(),cache:'no-store'});const data=await r.json();if(!r.ok)throw new Error(data.error||'Lien indisponible.');$('invite-link').value=data.url;$('copy-invite').hidden=false;$('invite-status').textContent='Lien prêt. Copie-le pour le transmettre directement à Jade.';}catch(e){$('invite-status').textContent=e.message;} });
@@ -91,11 +92,30 @@ $('save-form').addEventListener('submit',async e=>{e.preventDefault();e.submitte
 }catch(e){$('save-status').textContent=e.message==='Phrase incorrecte'?'Phrase du coffre incorrecte.':e.message;}finally{e.submitter.disabled=false;}});
 $('offline-open').onclick=()=>{$('offline-form').hidden=false;$('offline-phrase').focus();};
 $('offline-form').addEventListener('submit',e=>{e.preventDefault();run(e.submitter,async()=>{const phrase=$('offline-phrase').value;$('offline-phrase').value='';let data;try{data=await unseal(await db('readonly',s=>s.get('snapshot')),phrase);}catch{throw new Error('Phrase incorrecte ou copie endommagée.');}if(typeof data.vaultKey!=='string')throw new Error('Prépare une nouvelle copie depuis la connexion en ligne.');vaultKey=data.vaultKey;html=data.html;values=Object.assign(Object.create(null),data.values);responses=Object.assign(Object.create(null),data.responses);offline=true;display();});});
-api.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){hideTrip();reset();status('Session terminée.');}});
-setInterval(async()=>{if(offline||$('trip').hidden)return;try{await authorized();}catch{hideTrip();reset();status('L’accès a expiré ou a été révoqué.');}},60000);
+// Resume outside the SDK auth callback: it runs while the auth lock is held.
+async function resumeSession(){
+ if(booting||resuming||opening||offline||!resumeAllowed||!$('trip').hidden||!$('welcome').hidden||!$('mfa').hidden)return;
+ resuming=true;
+ try{
+  const {data,error}=await api.auth.getSession();if(error)throw error;
+  if(!data.session){$('resume-session').hidden=true;$('login').hidden=false;return;}
+  $('login').hidden=true;$('resume-session').hidden=true;status('Reprise de ta connexion…');
+  await challenge();
+ }catch{ $('back').hidden=false;$('login').hidden=true;$('resume-session').hidden=false;status('Ta connexion est mémorisée. Impossible de rouvrir le voyage pour le moment. Réessaie avec du réseau.'); }
+ finally{resuming=false;}
+}
+$('resume-session').onclick=()=>resumeSession();
+api.auth.onAuthStateChange(event=>{
+ if(event==='SIGNED_OUT'){resumeAllowed=false;hideTrip();reset();$('resume-session').hidden=true;status('Session terminée.');}
+ if(event==='SIGNED_IN'||event==='TOKEN_REFRESHED')setTimeout(()=>{void resumeSession();},0);
+});
+window.addEventListener('online',()=>{void resumeSession();});
+window.addEventListener('pageshow',()=>{void resumeSession();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void resumeSession();});
+setInterval(async()=>{if(offline||$('trip').hidden)return;try{await authorized();}catch{hideTrip();reset();$('login').hidden=true;$('resume-session').hidden=false;status('Vérification de l’accès interrompue. Réessaie pour reprendre ta connexion.');}},60000);
 window.addEventListener('offline',()=>{if(!$('trip').hidden&&!offline)$('mode').textContent='Réseau perdu · modifications non garanties';});
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./offline-sw.js').catch(()=>{});
-try{const params=new URLSearchParams(location.hash.slice(1)),invitation=params.get('invitation'),recovery=params.get('reinitialisation');if(recovery){history.replaceState(null,'',location.pathname);const {error}=await api.auth.verifyOtp({token_hash:recovery,type:'recovery'});if(error)await keepSession('Lien expiré ou déjà utilisé. Demande à Hugo un nouveau lien.');else{recovering=true;await challenge();if(recovering&&!$('mfa').hidden)status('Lien reconnu. Confirme avec Authenticator.');}}else if(invitation){history.replaceState(null,'',location.pathname);const {error}=await api.auth.verifyOtp({token_hash:invitation,type:'invite'});if(error)await keepSession('Invitation expirée ou déjà utilisée. Demande à Hugo un nouveau lien.');else{$('login').hidden=true;$('welcome').hidden=false;status('Ton invitation est reconnue. Choisis ton mot de passe.');}}else{db('readonly',s=>s.get('snapshot')).then(copy=>{$('offline-open').hidden=!copy;}).catch(()=>{});const {data}=await api.auth.getSession();if(data.session)await challenge();else status('Connecte-toi pour préparer votre voyage.');}}catch(e){status(navigator.onLine?e.message:'Pas de réseau. Ouvre une copie hors ligne préparée sur cet appareil.');}finally{$('boot').hidden=true;if($('trip').hidden)$('gate').hidden=false;}
+try{const params=new URLSearchParams(location.hash.slice(1)),invitation=params.get('invitation'),recovery=params.get('reinitialisation');if(recovery){history.replaceState(null,'',location.pathname);const {error}=await api.auth.verifyOtp({token_hash:recovery,type:'recovery'});if(error)await keepSession('Lien expiré ou déjà utilisé. Demande à Hugo un nouveau lien.');else{recovering=true;await challenge();if(recovering&&!$('mfa').hidden)status('Lien reconnu. Confirme avec Authenticator.');}}else if(invitation){history.replaceState(null,'',location.pathname);const {error}=await api.auth.verifyOtp({token_hash:invitation,type:'invite'});if(error)await keepSession('Invitation expirée ou déjà utilisée. Demande à Hugo un nouveau lien.');else{$('login').hidden=true;$('welcome').hidden=false;status('Ton invitation est reconnue. Choisis ton mot de passe.');}}else{db('readonly',s=>s.get('snapshot')).then(copy=>{$('offline-open').hidden=!copy;}).catch(()=>{});const {data,error}=await api.auth.getSession();if(error)throw error;if(data.session){$('login').hidden=true;await challenge();}else status('Connecte-toi pour préparer votre voyage.');}}catch(e){status(navigator.onLine?e.message:'Pas de réseau. Ouvre une copie hors ligne préparée sur cet appareil.');}finally{booting=false;if($('login').hidden&&$('trip').hidden&&$('mfa').hidden&&$('welcome').hidden)$('resume-session').hidden=false;$('boot').hidden=true;if($('trip').hidden)$('gate').hidden=false;}
 
 $('toolbar').addEventListener('click',e=>{if(['lock','logout'].includes(e.target.closest('button')?.id))$('toolbar').close();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')$('toolbar').close();});
