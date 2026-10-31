@@ -1,4 +1,4 @@
-const CACHE='voyage-access-73b29540e71d';
+const CACHE='voyage-access-f31d679287ec';
 
 const FILES=['./','./index.html','./access.css','./access.js','./crypto.js','./mobile-app.css','./mobile-app.js','./session-storage.js','./manifest.webmanifest','./oogway.png','./huahua-sticker.png','./huahua-icon-180.png','./huahua-icon-192.png','./huahua-icon-512.png','./huahua-icon-32.png','./config.js','./vendor/supabase-2.105.0.js','./vendor/leaflet.js','./vendor/leaflet.css'];
 
