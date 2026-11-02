@@ -1,3 +1,4 @@
+import {initNotifications} from './notifications.js';
 import {CONFIG} from './config.js';
 import {seal,unseal} from './crypto.js';
 import {createSessionStorage} from './session-storage.js';
@@ -122,3 +123,5 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')$('toolbar').close()
 
 $('close-options').onclick=()=>{$('toolbar').close();};
 $('toolbar').addEventListener('click',e=>{if(e.target===$('toolbar'))$('toolbar').close();});
+
+initNotifications({api,CONFIG,isOffline:()=>offline});
