@@ -25,7 +25,7 @@ async function secureFetch(input,options={}){
   return response;
 }
 async function weather(points){
- const key='weather:v1';
+ const key='weather:v2';
  if(offline){if(responses[key])return JSON.parse(responses[key]);throw new Error('Météo indisponible hors ligne. Connecte-toi pour la charger.');}
  const response=await fetch(CONFIG.url+'/functions/v1/voyage-weather',{method:'POST',headers:{...await headers(),'Content-Type':'application/json'},body:JSON.stringify({points}),cache:'no-store',credentials:'omit',redirect:'error',signal:AbortSignal.timeout(90000)});
  const result=await response.json();if(!response.ok)throw new Error(result.error||'Météo indisponible. Reconnecte-toi si nécessaire.');

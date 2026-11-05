@@ -4,6 +4,8 @@ import shutil
 import sys
 
 PUBLIC_FILES = [
+'weather-icons/clear-day.svg','weather-icons/clear-night.svg','weather-icons/drizzle.svg','weather-icons/fog.svg','weather-icons/LICENSE','weather-icons/not-available.svg','weather-icons/overcast.svg','weather-icons/partly-cloudy-day.svg','weather-icons/partly-cloudy-night.svg','weather-icons/rain.svg','weather-icons/raindrop.svg','weather-icons/sleet.svg','weather-icons/snow.svg','weather-icons/thunderstorms.svg','weather-icons/wind.svg',
+
     'index.html', 'access.js', 'notifications.js', 'access.css', 'config.js', 'crypto.js',
     'mobile-app.css','mobile-app.js','session-storage.js', 'manifest.webmanifest', 'offline-sw.js', 'sw.js', 'sw-push.js', 'po.png', 'oogway.png', 'huahua-sticker.png', 'huahua-icon-180.png', 'huahua-icon-192.png', 'huahua-icon-512.png', 'huahua-icon-32.png',
     'vendor/supabase-2.105.0.js', 'vendor/leaflet.js', 'vendor/leaflet.css',
