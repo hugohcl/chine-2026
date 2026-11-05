@@ -1,4 +1,4 @@
-const CACHE='voyage-weather-visual-fdfadd3d7505';
+const CACHE='voyage-weather-history-4815d9b1ed13';
 
 
 
