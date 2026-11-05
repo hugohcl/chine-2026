@@ -24,7 +24,14 @@ async function secureFetch(input,options={}){
   if(response.status===401||response.status===403){hideTrip();reset();status('L’accès a expiré ou a été révoqué. Reconnecte-toi.');}
   return response;
 }
-window.VoyageAccess=Object.freeze({request:secureFetch,storage,isOffline:()=>offline,getVaultKey:()=>vaultKey,openExternal:url=>{const target=new URL(url);if(target.protocol!=='https:'||target.username||target.password)throw new Error('Lien externe non autorisé');window.open(target.href,'_blank','noopener,noreferrer');},openSettings:()=>{$('toolbar').showModal();},lock:()=>{$('lock').click();}});
+async function weather(points){
+ const key='weather:v1';
+ if(offline){if(responses[key])return JSON.parse(responses[key]);throw new Error('Météo indisponible hors ligne. Connecte-toi pour la charger.');}
+ const response=await fetch(CONFIG.url+'/functions/v1/voyage-weather',{method:'POST',headers:{...await headers(),'Content-Type':'application/json'},body:JSON.stringify({points}),cache:'no-store',credentials:'omit',redirect:'error',signal:AbortSignal.timeout(90000)});
+ const result=await response.json();if(!response.ok)throw new Error(result.error||'Météo indisponible. Reconnecte-toi si nécessaire.');
+ responses[key]=JSON.stringify(result);return result;
+}
+window.VoyageAccess=Object.freeze({weather,request:secureFetch,storage,isOffline:()=>offline,getVaultKey:()=>vaultKey,openExternal:url=>{const target=new URL(url);if(target.protocol!=='https:'||target.username||target.password)throw new Error('Lien externe non autorisé');window.open(target.href,'_blank','noopener,noreferrer');},openSettings:()=>{$('toolbar').showModal();},lock:()=>{$('lock').click();}});
 function display(){ resumeAllowed=true;$('resume-session').hidden=true; $('gate').hidden=true;$('trip').hidden=false;$('prepare').hidden=offline;$('invite').hidden=true;$('reset-jade').hidden=true;if(!offline)api.rpc('voyage_can_invite').then(({data})=>{$('invite').hidden=data!==true;$('reset-jade').hidden=data!==true;});$('mode').textContent=offline?'Copie hors ligne · modifications non enregistrées':'Accès privé · Authenticator';$('trip').srcdoc=html;document.body.dataset.openMs=String(Math.round(performance.now()-bootStarted)); }
 async function authorized(){const {data,error}=await api.rpc('voyage_claim');if(error||data!==true)throw new Error('Ce compte n’est pas autorisé, ou sa connexion a expiré.');}
 async function openOnline(){
