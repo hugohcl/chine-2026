@@ -1,4 +1,4 @@
-const CACHE='voyage-weather-history-4815d9b1ed13';
+const CACHE='voyage-reservations-9e86ed2547a0';
 
 
 
@@ -80,13 +80,22 @@ self.addEventListener('fetch',e=>{
 
 
 
+function reminderURL(value){
+ const base=new URL('./',self.location.href),u=new URL(typeof value==='string'?value:'#todo',base);
+ return u.origin===base.origin&&u.pathname===base.pathname?u.href:new URL('#todo',base).href;
+}
 self.addEventListener('push',event=>event.waitUntil((async()=>{
-
  let data={};try{data=event.data.json();}catch{}
-
- await self.registration.showNotification('Notre voyage',{body:typeof data.body==='string'?data.body:'Ouvre le voyage pour consulter tes rappels.',icon:'./huahua-icon-192.png',badge:'./huahua-icon-32.png',tag:data.tag==='voyage-test'?'voyage-test':'voyage-rappel',data:{url:new URL('./',self.location.href).href}});
-
+ await self.registration.showNotification(typeof data.title==='string'?data.title.slice(0,120):'Réservations du voyage',{
+ body:typeof data.body==='string'?data.body.slice(0,400):'Ouvre la To do pour consulter tes rappels.',
+ icon:'./huahua-icon-192.png',badge:'./huahua-icon-32.png',
+ tag:typeof data.tag==='string'&&/^voyage-[a-zA-Z0-9:-]{1,100}$/.test(data.tag)?data.tag:'voyage-rappel',
+ data:{url:reminderURL(data.url)},renotify:true
+ });
 })()));
-
-self.addEventListener('notificationclick',event=>{event.notification.close();event.waitUntil((async()=>{const url=new URL('./',self.location.href).href;const all=await self.clients.matchAll({type:'window',includeUncontrolled:true});for(const client of all){if(client.url.startsWith(url)){await client.focus();return;}}await self.clients.openWindow(url);})());});
-
+self.addEventListener('notificationclick',event=>{event.notification.close();event.waitUntil((async()=>{
+ const url=reminderURL(event.notification.data?.url),base=new URL('./',self.location.href).href;
+ const all=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+ for(const client of all){if(client.url.startsWith(base)){await client.navigate(url);await client.focus();return;}}
+ await self.clients.openWindow(url);
+})());});
