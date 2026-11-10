@@ -1,4 +1,4 @@
-const CACHE='voyage-xian-55a3d200346a';
+const CACHE='voyage-naxi-e8d46c67b0c1';
 
 
 
