@@ -2,7 +2,7 @@
 .ios-tab-icon{display:none}
 html{-webkit-text-size-adjust:100%}
 button,a,input,select,textarea{touch-action:manipulation}
-@media(max-width:760px){
+@media(max-width:1000px){
  :root{--hmini:60px;--mobile-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
  html{scroll-padding-top:calc(70px + env(safe-area-inset-top,0px));scroll-padding-bottom:var(--mobile-bottom)}
  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:var(--mobile-bottom);overflow-wrap:break-word}
@@ -42,3 +42,35 @@ button,a,input,select,textarea{touch-action:manipulation}
  .docactions{gap:8px}.docactions button{min-width:44px}.hot-lightbox{max-height:calc(100dvh - 24px);overflow:auto}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.panel.active{animation:none}}
+
+/* Field use: every destination remains visible, including emergency contacts. */
+.mobile-day-nav,.mobile-calendar-toggle{display:none}
+.offline-notice{position:sticky;top:var(--hmini);z-index:35;padding:9px 16px;background:#fff0cb;color:#493b13;font-size:13px;line-height:1.45;border-bottom:1px solid #ddcc9b}
+.offline-notice strong{display:block}
+@media(max-width:1000px){
+ html body{--mobile-bottom:calc(112px + env(safe-area-inset-bottom,0px))}
+ html body .appbar .tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:repeat(2,50px);height:var(--mobile-bottom);overflow:visible!important;padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+ html body .appbar .tabs>button[data-t]{width:auto;min-width:0;min-height:48px;flex:initial;font-size:11px;gap:2px}
+ html body .appbar .tabs>button[data-t="correspondance"]{font-size:11px}
+ html body .appbar .app-po{display:none}
+ html body .appbar .app-home{padding-right:44px}
+ #mois{display:flex;flex-direction:column;gap:14px}
+ #mois>.mside{order:0;width:100%;min-width:0}
+ #mois>.mgrille{display:none;order:2;width:100%;min-width:0;overflow-x:auto}
+ #mois.mobile-overview>.mgrille{display:block}
+ #mois .mgrid{min-width:700px}
+ #mois>.mobile-calendar-toggle{display:block;order:1;width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--tx)}
+ .mobile-day-nav{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:8px;align-items:end;margin-bottom:14px}
+ .mobile-day-nav label{display:grid;gap:6px;font-size:12px;color:var(--tx2)}
+ .mobile-day-nav select{min-height:46px;width:100%;min-width:0;border:1px solid var(--line);background:var(--card);color:var(--tx);padding:8px;border-radius:10px}
+ .mobile-day-nav button{min-height:46px;background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:10px;font-size:24px}
+ .mobile-day-nav button:last-child{grid-column:1/-1;font-size:14px;min-height:44px}
+ .mobile-day-nav button:disabled{opacity:.35}
+ .mdetail .calnote{min-height:110px;line-height:1.6}
+ .mside .mdetail{padding:16px;overflow-wrap:anywhere}
+ .vault-heading{align-items:stretch}
+ .offline-notice{top:calc(60px + env(safe-area-inset-top,0px))}
+}
+
+button:disabled{cursor:default}
+.offline-notice+main{min-width:0}

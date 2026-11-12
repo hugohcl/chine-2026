@@ -8,6 +8,7 @@ const paths={
  finances:'<rect x="3" y="5" width="18" height="15" rx="3"/><path d="M16 11h5v5h-5a2.5 2.5 0 0 1 0-5ZM6 5V3h12"/>',
 };
 for(const button of document.querySelectorAll('.tabs button[data-t]')){
+ if(!paths[button.dataset.t]||button.querySelector('.ios-tab-icon'))continue;
  const icon=document.createElement('span');icon.className='ios-tab-icon';icon.setAttribute('aria-hidden','true');
  icon.innerHTML='<svg viewBox="0 0 24 24">'+paths[button.dataset.t]+'</svg>';button.prepend(icon);
 }
@@ -23,3 +24,17 @@ function labelFinance(){
  }
 }
 if(financeRows){labelFinance();new MutationObserver(labelFinance).observe(financeRows,{childList:true,subtree:true});}
+
+const access=window.parent.VoyageAccess;
+if(access?.isOffline()){
+ const notice=document.createElement('div');notice.className='offline-notice';notice.setAttribute('role','status');
+ const title=document.createElement('strong');title.textContent='Copie hors ligne · consultation';notice.append(title);
+ const savedAt=access.offlineInfo?.().savedAt;
+ notice.append(document.createTextNode(savedAt?'Préparée le '+new Date(savedAt).toLocaleString('fr-FR')+'. Sans Authenticator.':'Sans Authenticator. Les changements ne sont pas enregistrés.'));
+ document.querySelector('.appbar')?.after(notice);
+ function readOnly(){
+  document.querySelectorAll('.mdetail input,.mdetail textarea,.mdetail .mdel,.fintable input,.fintable select,.fintable textarea,.fintable button,#finrate,#finadd,#docadd,.vault-menu-items .danger,#docimportbtn,#finduo button,.vault-edit input,.vault-edit select,[data-urg-profile] input,[data-urg-profile] textarea,[data-urg-profile] button,.todocard input,.todocard .del,.todocard .plus,.todocard form button,.reservation-done').forEach(field=>{field.disabled=true;});
+  document.querySelectorAll('.psync,#finsync,#todosync').forEach(label=>{if(label.textContent!=='Copie hors ligne · consultation')label.textContent='Copie hors ligne · consultation';});
+ }
+ readOnly();new MutationObserver(readOnly).observe(document.body,{childList:true,subtree:true});
+}

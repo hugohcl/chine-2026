@@ -1,6 +1,6 @@
 const enc = new TextEncoder();
 const dec = new TextDecoder();
-const b64 = a => btoa(Array.from(new Uint8Array(a), x => String.fromCharCode(x)).join(''));
+const b64 = a => {const bytes=new Uint8Array(a);let text='';for(let i=0;i<bytes.length;i+=32768)text+=String.fromCharCode(...bytes.subarray(i,i+32768));return btoa(text);};
 const bytes = s => Uint8Array.from(atob(s), x => x.charCodeAt(0));
 export async function derive(phrase, salt) {
   const material = await crypto.subtle.importKey('raw', enc.encode(phrase.normalize('NFC').trim()), 'PBKDF2', false, ['deriveKey']);

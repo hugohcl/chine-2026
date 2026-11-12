@@ -14,3 +14,6 @@ html{-webkit-text-size-adjust:100%}button,a,input{touch-action:manipulation}butt
 }
 
 #login[hidden]~#passkey-login{display:none!important}
+#boot{flex-wrap:wrap;padding:24px;text-align:center}#boot-offline{flex-basis:100%;max-width:360px}
+#offline-open{width:100%;min-height:52px;font-weight:700}
+#offline-save:focus-within{scroll-padding-bottom:24px}
