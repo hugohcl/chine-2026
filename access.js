@@ -14,6 +14,24 @@ function offlineHTML(source){
  return source;
 }
 function deadline(promise,ms=20000){let timer;return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Le réseau ne répond pas. Réessaie ou ouvre ta copie hors ligne.')),ms);})]).finally(()=>clearTimeout(timer));}
+async function prepareOfflineFiles(){
+ if(!navigator.serviceWorker)throw new Error('Le hors-ligne nécessite Safari ou un navigateur compatible.');
+ const registration=await deadline(navigator.serviceWorker.ready);
+ const worker=registration.installing||registration.waiting||registration.active;
+ if(!worker)throw new Error('Ferme et rouvre l’application pour terminer sa mise à jour.');
+ if(worker.state!=='activated')await deadline(new Promise((resolve,reject)=>{
+  const changed=()=>{if(worker.state==='activated'||worker.state==='redundant'){worker.removeEventListener('statechange',changed);worker.state==='activated'?resolve():reject(new Error('Mise à jour interrompue. Ferme et rouvre l’application.'));}};
+  worker.addEventListener('statechange',changed);changed();
+ }),60000);
+ const channel=new MessageChannel();
+ try{
+  const ready=await deadline(new Promise((resolve,reject)=>{
+   channel.port1.onmessage=event=>event.data?.ok?resolve(event.data):reject(new Error('Les fichiers hors ligne ne sont pas tous disponibles. Réessaie avec du réseau.'));
+   worker.postMessage({type:'PREPARE_OFFLINE_FILES'},[channel.port2]);
+  }),60000);
+  if(!ready.cache)throw new Error('Ferme et rouvre l’application pour terminer sa mise à jour.');
+ }finally{channel.port1.close();channel.port2.close();}
+}
 function showOfflineForm(){bootAttempt++;resumeAllowed=false;$('boot').hidden=true;$('gate').hidden=false;$('login').hidden=true;$('mfa').hidden=true;$('resume-session').hidden=true;$('offline-form').hidden=false;$('offline-phrase').focus();status('Sans réseau ni Authenticator. Utilise le mot de passe de la dernière copie.');}
 // Offer the local copy independently of auth startup and token refresh.
 void db('readonly',s=>s.get('snapshot')).then(copy=>{if(copy){$('offline-open').hidden=false;$('boot-offline').hidden=false;}}).catch(()=>{});
@@ -43,11 +61,11 @@ async function weather(points){
  const key='weather:v2';
  if(offline){if(responses[key])return JSON.parse(responses[key]);throw new Error('Météo indisponible hors ligne. Connecte-toi pour la charger.');}
  const response=await fetch(CONFIG.url+'/functions/v1/voyage-weather',{method:'POST',headers:{...await headers(),'Content-Type':'application/json'},body:JSON.stringify({points}),cache:'no-store',credentials:'omit',redirect:'error',signal:AbortSignal.timeout(90000)});
- const result=await response.json();if(!response.ok)throw new Error(result.error||'Météo indisponible. Reconnecte-toi si nécessaire.');
+ let result;try{result=await response.json();}catch{throw new Error('Météo momentanément indisponible. Réessaie avec du réseau.');}if(!response.ok)throw new Error(result.error||'Météo indisponible. Reconnecte-toi si nécessaire.');
  responses[key]=JSON.stringify(result);return result;
 }
 window.VoyageAccess=Object.freeze({weather,request:secureFetch,storage,isOffline:()=>offline,getOfflineDocuments:()=>offlineDocuments,offlineInfo:()=>({savedAt:offlineSavedAt}),loadPdfLibrary,getVaultKey:()=>vaultKey,openExternal:url=>{const target=new URL(url);if(target.protocol!=='https:'||target.username||target.password)throw new Error('Lien externe non autorisé');window.open(target.href,'_blank','noopener,noreferrer');},openSettings:()=>{$('toolbar').showModal();},lock:()=>{$('lock').click();}});
-function display(){ resumeAllowed=true;$('resume-session').hidden=true; $('gate').hidden=true;$('trip').hidden=false;$('prepare').hidden=offline;$('invite').hidden=true;$('reset-jade').hidden=true;if(!offline)api.rpc('voyage_can_invite').then(({data})=>{$('invite').hidden=data!==true;$('reset-jade').hidden=data!==true;});$('mode').textContent=offline?'Copie hors ligne · modifications non enregistrées':'Accès privé · Authenticator';$('trip').srcdoc=offline?offlineHTML(html):html;document.body.dataset.openMs=String(Math.round(performance.now()-bootStarted)); }
+function display(){ resumeAllowed=!offline;$('resume-session').hidden=true; $('gate').hidden=true;$('trip').hidden=false;$('prepare').hidden=offline;$('invite').hidden=true;$('reset-jade').hidden=true;if(!offline)api.rpc('voyage_can_invite').then(({data})=>{$('invite').hidden=data!==true;$('reset-jade').hidden=data!==true;});$('mode').textContent=offline?'Copie hors ligne · modifications non enregistrées':'Accès privé · Authenticator';$('trip').srcdoc=offline?offlineHTML(html):html;document.body.dataset.openMs=String(Math.round(performance.now()-bootStarted)); }
 async function authorized(){const {data,error}=await api.rpc('voyage_claim');if(error||data!==true)throw new Error('Ce compte n’est pas autorisé, ou sa connexion a expiré.');}
 async function openOnline(){
  if(opening)return;opening=true;const attempt=bootAttempt;
@@ -119,8 +137,7 @@ $('save-form').addEventListener('submit',async e=>{e.preventDefault();e.submitte
  if(!docsResponse.ok)throw new Error('Les documents n’ont pas pu être téléchargés. Réessaie.');
  const documents=await docsResponse.json();
  if(!Array.isArray(documents)||documents.some(d=>!d.id||!d.iv_m||!d.meta_c||!d.iv_d||!d.data_c))throw new Error('La copie des documents est incomplète.');
- if(!navigator.serviceWorker)throw new Error('Le hors-ligne nécessite Safari ou un navigateur compatible.');
- await deadline(navigator.serviceWorker.ready);
+ await prepareOfflineFiles();
  await Promise.all(['vendor/pdfjs/pdf.min.mjs','vendor/pdfjs/pdf.worker.min.mjs'].map(async path=>{const response=await fetch(new URL(path,location.href));if(!response.ok)throw new Error('Le lecteur PDF n’a pas pu être préparé hors ligne. Réessaie avec du réseau.');await response.arrayBuffer();}));
  const assets={};
  for(const name of ['mobile-app.css','mobile-app.js','vendor/leaflet.css','vendor/leaflet.js']){const asset=await deadline(fetch(new URL(name,location.href)));if(!asset.ok)throw new Error('Interface hors ligne incomplète. Réessaie.');assets[name]=await asset.text();}
@@ -135,13 +152,14 @@ $('offline-form').addEventListener('submit',e=>{e.preventDefault();run(e.submitt
 // Resume outside the SDK auth callback: it runs while the auth lock is held.
 async function resumeSession(){
  if(booting||resuming||opening||offline||!resumeAllowed||!$('trip').hidden||!$('welcome').hidden||!$('mfa').hidden)return;
- resuming=true;
+ resuming=true;const attempt=bootAttempt;
  try{
   const {data,error}=await api.auth.getSession();if(error)throw error;
+  if(attempt!==bootAttempt||offline||!resumeAllowed)return;
   if(!data.session){$('resume-session').hidden=true;$('login').hidden=false;return;}
   $('login').hidden=true;$('resume-session').hidden=true;status('Reprise de ta connexion…');
   await challenge();
- }catch{ $('back').hidden=false;$('login').hidden=true;$('resume-session').hidden=false;status('Ta connexion est mémorisée. Impossible de rouvrir le voyage pour le moment. Réessaie avec du réseau.'); }
+ }catch{ if(attempt!==bootAttempt||offline)return;$('back').hidden=false;$('login').hidden=true;$('resume-session').hidden=false;status('Ta connexion est mémorisée. Impossible de rouvrir le voyage pour le moment. Réessaie avec du réseau.'); }
  finally{resuming=false;}
 }
 $('resume-session').onclick=()=>resumeSession();

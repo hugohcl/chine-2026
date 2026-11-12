@@ -1,4 +1,4 @@
-const CACHE='voyage-mobile-52fcd19022e2';
+const CACHE='voyage-mobile-1874b33f8d1e';
 
 
 
@@ -12,6 +12,16 @@ FILES.push('./vendor/pdfjs/pdf.min.mjs','./vendor/pdfjs/pdf.worker.min.mjs');
 
 
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES.map(f=>new Request(f,{cache:'reload'})))).then(()=>self.skipWaiting())));
+
+// A page must receive this acknowledgement before claiming its copy is ready.
+// This also covers an update that was still installing when preparation began.
+self.addEventListener('message',event=>{
+ if(event.data?.type!=='PREPARE_OFFLINE_FILES'||!event.ports?.[0])return;
+ const port=event.ports[0];
+ event.waitUntil(caches.open(CACHE)
+  .then(cache=>cache.addAll(FILES.map(path=>new Request(path,{cache:'reload'}))))
+  .then(()=>port.postMessage({ok:true,cache:CACHE}),()=>port.postMessage({ok:false})));
+});
 
 
 
