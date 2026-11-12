@@ -61,13 +61,17 @@ async function openOnline(){
  }finally{opening=false;}
 }
 async function challenge(force=false){
+ const attempt=bootAttempt;
  if(force)resumeAllowed=false;
  const {data:level,error}=await api.auth.mfa.getAuthenticatorAssuranceLevel();if(error)throw error;
+ if(attempt!==bootAttempt)return;
  if(level.currentLevel==='aal2'&&!force){await openOnline();return;}
  const {data:account,error:accountError}=await api.rpc('voyage_account_status');
+ if(attempt!==bootAttempt)return;
  if(accountError)throw new Error('Impossible de vérifier l’autorisation du compte.');
  if(account!=='approved'){reset();$('login').hidden=true;$('back').hidden=false;status('Accès refusé : utilise une adresse autorisée et vérifiée.');return;}
  const {data:factors,error:factorError}=await api.auth.mfa.listFactors();if(factorError)throw factorError;
+ if(attempt!==bootAttempt)return;
  factor=factors.totp.find(f=>f.status==='verified')?.id;
  $('login').hidden=true;$('mfa').hidden=false;$('back').hidden=false;
  $('mfa-title').textContent=factor?'Code Authenticator':'Configurer Authenticator';
