@@ -12,6 +12,35 @@ for(const button of document.querySelectorAll('.tabs button[data-t]')){
  const icon=document.createElement('span');icon.className='ios-tab-icon';icon.setAttribute('aria-hidden','true');
  icon.innerHTML='<svg viewBox="0 0 24 24">'+paths[button.dataset.t]+'</svg>';button.prepend(icon);
 }
+// Keep the existing destination buttons for desktop and route the mobile sheet
+// through their handlers so navigation, counts and URL state stay in one place.
+const mobileTabs=document.querySelector('.appbar .tabs');
+if(mobileTabs){
+ const extraDestinations=[['hotels','Hôtels'],['meteo','Météo'],['todo','À faire'],['finances','Finance']];
+ const more=document.createElement('button');more.type='button';more.className='mobile-more-button';
+ more.setAttribute('aria-haspopup','dialog');more.setAttribute('aria-controls','mobile-more-dialog');more.setAttribute('aria-expanded','false');
+ more.innerHTML='<span class="ios-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></span><span>Plus</span>';
+ const sheet=document.createElement('dialog');sheet.id='mobile-more-dialog';sheet.className='mobile-more-dialog';sheet.setAttribute('aria-labelledby','mobile-more-title');
+ const head=document.createElement('div');head.className='mobile-more-head';
+ const title=document.createElement('h2');title.id='mobile-more-title';title.textContent='Autres rubriques';
+ const close=document.createElement('button');close.type='button';close.textContent='Fermer';close.onclick=()=>sheet.close();head.append(title,close);sheet.append(head);
+ const choices=document.createElement('div');choices.className='mobile-more-choices';
+ const entries=[];
+ for(const [id,label] of extraDestinations){
+  const destination=mobileTabs.querySelector('[data-t="'+id+'"]');if(!destination)continue;
+  const choice=document.createElement('button');choice.type='button';
+  const icon=destination.querySelector('.ios-tab-icon');if(icon)choice.append(icon.cloneNode(true));
+  const text=document.createElement('span');text.textContent=label;choice.append(text);
+  choice.onclick=()=>{sheet.close();destination.click();};choices.append(choice);entries.push({destination,choice});
+ }
+ sheet.append(choices);document.body.append(sheet);mobileTabs.append(more);
+ more.onclick=()=>{sheet.showModal();more.setAttribute('aria-expanded','true');};
+ sheet.addEventListener('close',()=>more.setAttribute('aria-expanded','false'));
+ sheet.addEventListener('click',event=>{if(event.target===sheet){const r=sheet.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)sheet.close();}});
+ const updateMore=()=>{let active=false;for(const {destination,choice} of entries){const selected=destination.getAttribute('aria-current')==='true';choice.setAttribute('aria-current',String(selected));active||=selected;}more.classList.toggle('is-active',active);};
+ updateMore();new MutationObserver(updateMore).observe(mobileTabs,{attributes:true,subtree:true,attributeFilter:['aria-current']});
+ const mobile=matchMedia('(max-width:1000px)');mobile.addEventListener('change',()=>{if(!mobile.matches&&sheet.open)sheet.close();});
+}
 const financeRows=document.getElementById('finrows');
 const financeLabels=['Dépense','Catégorie','Statut','Payé par','Pour','Date / échéance','Montant','Devise','Note',''];
 function labelFinance(){

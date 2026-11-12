@@ -43,15 +43,30 @@ button,a,input,select,textarea{touch-action:manipulation}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.panel.active{animation:none}}
 
-/* Field use: every destination remains visible, including emergency contacts. */
+/* Field use: four direct destinations plus a sheet for the other sections. */
+.mobile-more-button{display:none}
+.mobile-more-dialog{border:1px solid var(--line);border-radius:22px 22px 0 0;background:var(--card);color:var(--tx);width:100%;max-width:560px;max-height:80dvh;margin:auto auto 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));box-sizing:border-box;overflow:auto;overscroll-behavior:contain}
+.mobile-more-dialog::backdrop{background:#0008}
+.mobile-more-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.mobile-more-head h2{font-size:20px;margin:0}
+.mobile-more-head button{min-height:44px;padding:8px 12px;background:var(--pap);color:var(--tx);border:1px solid var(--line);border-radius:10px}
+.mobile-more-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mobile-more-choices button{display:flex;align-items:center;gap:12px;min-height:64px;padding:14px;background:var(--pap);color:var(--tx);border:1px solid var(--line);border-radius:14px;font-size:15px;text-align:left}
+.mobile-more-choices button[aria-current=true]{color:var(--zhu);border-color:var(--zhu)}
 .mobile-day-nav,.mobile-calendar-toggle{display:none}
 .offline-notice{position:sticky;top:var(--hmini);z-index:35;padding:9px 16px;background:#fff0cb;color:#493b13;font-size:13px;line-height:1.45;border-bottom:1px solid #ddcc9b}
 .offline-notice strong{display:block}
 @media(max-width:1000px){
- html body{--mobile-bottom:calc(112px + env(safe-area-inset-bottom,0px))}
- html body .appbar .tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:repeat(2,50px);height:var(--mobile-bottom);overflow:visible!important;padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
- html body .appbar .tabs>button[data-t]{width:auto;min-width:0;min-height:48px;flex:initial;font-size:11px;gap:2px}
- html body .appbar .tabs>button[data-t="correspondance"]{font-size:11px}
+ html body{--mobile-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
+ html body .appbar .tabs{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-template-rows:54px;height:var(--mobile-bottom);overflow:visible!important;padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+ html body .appbar .tabs>button[data-t],html body .appbar .tabs>.mobile-more-button{width:auto;min-width:0;min-height:48px;flex:initial;font-size:10px;gap:3px}
+ html body .appbar .tabs>button[data-t="hotels"],html body .appbar .tabs>button[data-t="meteo"],html body .appbar .tabs>button[data-t="todo"],html body .appbar .tabs>button[data-t="finances"]{display:none!important}
+ html body .appbar .tabs>button[data-t="calendrier"]{order:0}
+ html body .appbar .tabs>button[data-t="correspondance"]{order:1;font-size:10px}
+ html body .appbar .tabs>button[data-t="documents"]{order:2}
+ html body .appbar .tabs>button[data-t="urgence"]{order:3}
+ html body .appbar .tabs>.mobile-more-button{order:4;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px 1px;margin:0;border-radius:12px;color:var(--tx2);font-weight:600;line-height:1.2;letter-spacing:0;white-space:nowrap}
+ html body .appbar .tabs>.mobile-more-button.is-active{background:color-mix(in srgb,var(--zhu) 12%,var(--card));color:var(--zhu)}
  html body .appbar .app-po{display:none}
  html body .appbar .app-home{padding-right:44px}
  #mois{display:flex;flex-direction:column;gap:14px}
