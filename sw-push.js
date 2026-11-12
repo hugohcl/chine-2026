@@ -1,4 +1,4 @@
-const CACHE='voyage-navigation-09d87a4e2530';
+const CACHE='voyage-g2448-45be38c43b5d';
 
 
 
