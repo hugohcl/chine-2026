@@ -122,12 +122,13 @@ $('copy-invite').onclick=()=>run($('copy-invite'),async()=>{await navigator.clip
 $('close-invite').onclick=()=>{$('invite-link').value='';$('invite-panel').hidden=true;};
 $('welcome').addEventListener('submit',e=>{e.preventDefault();run(e.submitter,async()=>{const password=$('new-password').value;const confirmation=$('confirm-password').value;$('new-password').value='';$('confirm-password').value='';if(password!==confirmation)throw new Error('Les mots de passe ne correspondent pas.');const {error}=await api.auth.updateUser({password});if(error)throw new Error('Mot de passe refusé : utilise au moins 14 caractères, différent de l’ancien.');const changed=recovering;recovering=false;$('welcome').hidden=true;await challenge();if(changed)status('Mot de passe changé. Si tu avais préparé une copie hors ligne, prépare-la à nouveau.');});});
 $('save-cancel').onclick=()=>{$('offline-save').hidden=true;$('trip').inert=false;$('save-phrase').value='';$('toolbar').showModal();};
-$('save-form').addEventListener('submit',async e=>{e.preventDefault();e.submitter.disabled=true;try{
+$('save-form').addEventListener('submit',async e=>{e.preventDefault();e.submitter.disabled=true;$('test-offline').hidden=true;let saveStage='connexion';const progress=(stage,message)=>{saveStage=stage;$('save-status').textContent=message;};try{
  const phrase=$('save-phrase').value;$('save-phrase').value='';$('save-status').textContent='Préparation des données et documents…';
  const vault=$('trip').contentWindow.VoyageVault;if(!vault)throw new Error('Le coffre n’est pas disponible.');
  const {data:identity,error:identityError}=await api.auth.getUser();if(identityError||!identity.user?.email)throw new Error('Reconnecte-toi avant de préparer le hors-ligne.');
  const verifier=window.supabase.createClient(CONFIG.url,CONFIG.key,{auth:{storageKey:'voyage-password-check',persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
  try{const {data:checked,error}=await verifier.auth.signInWithPassword({email:identity.user.email,password:phrase});if(error||checked.user?.id!==identity.user.id)throw new Error('Mot de passe de connexion incorrect.');}finally{await verifier.auth.signOut({scope:'local'});}
+ progress('données et documents','Téléchargement des données et documents…');
  await vault.unlock();await deadline(vault.sync(),45000);
  // Refresh required data explicitly; a successful vault sync alone can mask failures.
  for(const path of ['/rest/v1/chine_plan?id=eq.principal&select=etat,maj_le','/rest/v1/chine_finances?id=eq.principal&select=etat,maj_le','/rest/v1/chine_todo?select=*&order=ordre.asc,cree_le.asc']){
@@ -137,15 +138,19 @@ $('save-form').addEventListener('submit',async e=>{e.preventDefault();e.submitte
  if(!docsResponse.ok)throw new Error('Les documents n’ont pas pu être téléchargés. Réessaie.');
  const documents=await docsResponse.json();
  if(!Array.isArray(documents)||documents.some(d=>!d.id||!d.iv_m||!d.meta_c||!d.iv_d||!d.data_c))throw new Error('La copie des documents est incomplète.');
+ progress('fichiers de l’application','Préparation des fichiers de l’application…');
  await prepareOfflineFiles();
+ progress('lecteur PDF','Préparation du lecteur PDF…');
  await Promise.all(['vendor/pdfjs/pdf.min.mjs','vendor/pdfjs/pdf.worker.min.mjs'].map(async path=>{const response=await fetch(new URL(path,location.href));if(!response.ok)throw new Error('Le lecteur PDF n’a pas pu être préparé hors ligne. Réessaie avec du réseau.');await response.arrayBuffer();}));
+ progress('interface mobile','Préparation de l’interface mobile…');
  const assets={};
  for(const name of ['mobile-app.css','mobile-app.js','vendor/leaflet.css','vendor/leaflet.js']){const asset=await deadline(fetch(new URL(name,location.href)));if(!asset.ok)throw new Error('Interface hors ligne incomplète. Réessaie.');assets[name]=await asset.text();}
  for(const name of ['oogway.png','huahua-sticker.png']){const asset=await deadline(fetch(new URL(name,location.href)));if(asset.ok){const bytes=new Uint8Array(await asset.arrayBuffer());let text='';for(let i=0;i<bytes.length;i+=32768)text+=String.fromCharCode(...bytes.subarray(i,i+32768));assets[name]='data:image/png;base64,'+btoa(text);}}
+ progress('enregistrement sur cet appareil','Chiffrement et enregistrement sur cet appareil…');
  const savedAt=new Date().toISOString();const record=await seal({html,values,responses,documents,assets,vaultKey,savedAt},phrase);
  await db('readwrite',s=>s.put(record,'snapshot'));
  await navigator.storage?.persist?.().catch(()=>false);$('save-status').textContent='Copie prête : '+documents.length+' document'+(documents.length===1?'':'s')+'. Ouverture sans Authenticator, avec ce mot de passe. Teste-la en mode avion.';$('offline-open').hidden=false;$('test-offline').hidden=false;
-}catch(e){$('save-status').textContent=e.message==='Phrase incorrecte'?'Phrase du coffre incorrecte.':e.message;}finally{e.submitter.disabled=false;}});
+}catch(e){const message=e.message||'';$('save-status').textContent=/load failed|failed to fetch|networkerror|network request failed/i.test(message)?'Copie non prête : téléchargement interrompu ('+saveStage+'). Garde Internet activé, ferme et rouvre l’app, puis réessaie.':message==='Phrase incorrecte'?'Phrase du coffre incorrecte.':message||'La copie n’a pas pu être préparée. Réessaie avec du réseau.';}finally{e.submitter.disabled=false;}});
 $('offline-open').onclick=showOfflineForm;
 $('test-offline').onclick=()=>{hideTrip();$('trip').inert=false;showOfflineForm();};
 $('offline-form').addEventListener('submit',e=>{e.preventDefault();run(e.submitter,async()=>{const phrase=$('offline-phrase').value;$('offline-phrase').value='';let data;try{data=await unseal(await db('readonly',s=>s.get('snapshot')),phrase);}catch{throw new Error('Phrase incorrecte ou copie endommagée.');}if(typeof data.vaultKey!=='string')throw new Error('Prépare une nouvelle copie depuis la connexion en ligne.');bootAttempt++;vaultKey=data.vaultKey;offlineDocuments=Array.isArray(data.documents)?data.documents:null;offlineSavedAt=data.savedAt||null;offlineAssets=data.assets||{};html=data.html;values=Object.assign(Object.create(null),data.values);responses=Object.assign(Object.create(null),data.responses);offline=true;display();});});
